@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Clock</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    color: #94a3b8;
+  }
+
+  .clocks-container {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .clock-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+    padding: 1.5rem 2rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 220px;
+  }
+
+  .clock-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 1rem;
+  }
+
+  .clock-label span {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: #475569;
+    margin-top: 0.2rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* Analog clock */
+  .analog-clock {
+    width: 160px;
+    height: 160px;
+    position: relative;
+    margin-bottom: 1rem;
+  }
+
+  .analog-clock svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Digital clock */
+  .digital-time {
+    font-size: 2rem;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    color: #f1f5f9;
+  }
+
+  .digital-time .period {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-left: 0.3rem;
+  }
+
+  /* Slider section */
+  .slider-section {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+    padding: 1.5rem 2.5rem;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+  }
+
+  .slider-section label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #64748b;
+    display: block;
+    margin-bottom: 0.8rem;
+  }
+
+  .slider-value {
+    font-size: 2.5rem;
+    font-weight: 200;
+    color: #f1f5f9;
+    margin-bottom: 0.6rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .slider-value .suffix {
+    font-size: 0.9rem;
+    color: #64748b;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: #334155;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    background: #60a5fa;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #3b82f6;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .slider-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4rem;
+    padding: 0 2px;
+  }
+
+  .slider-ticks span {
+    font-size: 0.6rem;
+    color: #475569;
+    width: 20px;
+    text-align: center;
+  }
+
+  .reset-btn {
+    margin-top: 1rem;
+    padding: 0.4rem 1.2rem;
+    background: transparent;
+    border: 1px solid #334155;
+    color: #64748b;
+    border-radius: 0.4rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .reset-btn:hover {
+    border-color: #3b82f6;
+    color: #93c5fd;
+  }
+
+  @media (max-width: 740px) {
+    .clocks-container { gap: 1.5rem; }
+    .clock-card { min-width: 180px; padding: 1.2rem 1.4rem 1rem; }
+    .analog-clock { width: 130px; height: 130px; }
+    .digital-time { font-size: 1.6rem; }
+    h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <h1>World Clock</h1>
+
+  <div class="clocks-container">
+    <div class="clock-card" v-for="clock in clocks" :key="clock.id">
+      <div class="clock-label">
+        {{ clock.name }}
+        <span>{{ clock.zone }}</span>
+      </div>
+
+      <!-- Analog Clock -->
+      <div class="analog-clock">
+        <svg viewBox="0 0 200 200">
+          <!-- Face -->
+          <circle cx="100" cy="100" r="95" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+
+          <!-- Hour markers -->
+          <line v-for="i in 12" :key="'h'+i"
+            :x1="100 + 78 * Math.sin(i * Math.PI / 6)"
+            :y1="100 - 78 * Math.cos(i * Math.PI / 6)"
+            :x2="100 + 88 * Math.sin(i * Math.PI / 6)"
+            :y2="100 - 88 * Math.cos(i * Math.PI / 6)"
+            stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+
+          <!-- Minute markers -->
+          <line v-for="i in 60" :key="'m'+i"
+            v-if="i % 5 !== 0"
+            :x1="100 + 84 * Math.sin(i * Math.PI / 30)"
+            :y1="100 - 84 * Math.cos(i * Math.PI / 30)"
+            :x2="100 + 88 * Math.sin(i * Math.PI / 30)"
+            :y2="100 - 88 * Math.cos(i * Math.PI / 30)"
+            stroke="#334155" stroke-width="1" stroke-linecap="round"/>
+
+          <!-- Hour hand -->
+          <line x1="100" y1="100"
+            :x2="100 + 50 * Math.sin(hourAngle(clock))"
+            :y2="100 - 50 * Math.cos(hourAngle(clock))"
+            stroke="#f1f5f9" stroke-width="4" stroke-linecap="round"/>
+
+          <!-- Minute hand -->
+          <line x1="100" y1="100"
+            :x2="100 + 68 * Math.sin(minuteAngle(clock))"
+            :y2="100 - 68 * Math.cos(minuteAngle(clock))"
+            stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+
+          <!-- Center dot -->
+          <circle cx="100" cy="100" r="4" fill="#3b82f6"/>
+        </svg>
+      </div>
+
+      <!-- Digital Clock -->
+      <div class="digital-time">
+        {{ formatDigital(clock) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Slider -->
+  <div class="slider-section">
+    <label>Set Time</label>
+    <div class="slider-value">
+      {{ sliderDisplay }}<span class="suffix"> {{ sliderStep >= 24 ? 'PM' : 'AM' }}</span>
+    </div>
+    <input type="range" min="0" max="47" v-model.number="sliderStep">
+    <div class="slider-ticks">
+      <span v-for="h in [0,6,12,18,24,30,36,42,47]" :key="h">{{ String(Math.floor(h/2)).padStart(2,'0') }}:{{ h%2===0?'00':'30' }}</span>
+    </div>
+    <button class="reset-btn" @click="resetToNow">Reset to Now</button>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+
+createApp({
+  setup() {
+    const now0 = new Date();
+    const sliderStep = ref(now0.getHours() * 2 + (now0.getMinutes() >= 30 ? 1 : 0));
+    const currentSeconds = ref(now0.getSeconds());
+    const extraMinutes = ref(now0.getMinutes() % 30);
+    let timer = null;
+
+    const clocks = [
+      { id: 'local', name: 'Local Time', zone: Intl.DateTimeFormat().resolvedOptions().timeZone, offset: null },
+      { id: 'ist',   name: 'India (IST)', zone: 'Asia/Kolkata', offset: null },
+      { id: 'ny',    name: 'New York', zone: 'America/New_York', offset: null },
+    ];
+
+    function getOffsetDiffMinutes(tz) {
+      const now = new Date();
+      const localOffsetMin = -now.getTimezoneOffset();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour: 'numeric', minute: 'numeric', hour12: false,
+        year: 'numeric', month: 'numeric', day: 'numeric'
+      });
+      const parts = formatter.formatToParts(now);
+      const getPart = (type) => parseInt(parts.find(p => p.type === type).value);
+
+      const tzHour = getPart('hour') === 24 ? 0 : getPart('hour');
+      const tzMinute = getPart('minute');
+      const tzDay = getPart('day');
+
+      const localHour = now.getHours();
+      const localMinute = now.getMinutes();
+      const localDay = now.getDate();
+
+      let diffMin = (tzHour * 60 + tzMinute) - (localHour * 60 + localMinute);
+      if (tzDay > localDay) diffMin += 24 * 60;
+      else if (tzDay < localDay) diffMin -= 24 * 60;
+
+      return diffMin;
+    }
+
+    function getClockTime(clock) {
+      const sliderMinutes = Math.floor(sliderStep.value / 2) * 60 + (sliderStep.value % 2) * 30 + extraMinutes.value;
+      const diffMin = getOffsetDiffMinutes(clock.zone);
+      let totalMinutes = sliderMinutes + diffMin;
+      // For local clock, no offset
+      if (clock.id === 'local') {
+        totalMinutes = sliderMinutes;
+      }
+      // Normalize to 0..1440
+      totalMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+      const h = Math.floor(totalMinutes / 60);
+      const m = totalMinutes % 60;
+      return { hours: h, minutes: m, seconds: currentSeconds.value };
+    }
+
+    function hourAngle(clock) {
+      const t = getClockTime(clock);
+      return (t.hours % 12 + t.minutes / 60) * (Math.PI / 6);
+    }
+
+    function minuteAngle(clock) {
+      const t = getClockTime(clock);
+      return t.minutes * (Math.PI / 30);
+    }
+
+    function formatDigital(clock) {
+      const t = getClockTime(clock);
+      const hh = String(t.hours).padStart(2, '0');
+      const mm = String(t.minutes).padStart(2, '0');
+      return `${hh}:${mm}`;
+    }
+
+    const sliderDisplay = computed(() => {
+      const h = Math.floor(sliderStep.value / 2);
+      const m = (sliderStep.value % 2) * 30;
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    });
+
+    function resetToNow() {
+      const now = new Date();
+      sliderStep.value = now.getHours() * 2 + (now.getMinutes() >= 30 ? 1 : 0);
+      extraMinutes.value = now.getMinutes() % 30;
+    }
+
+    function tick() {
+      const now = new Date();
+      currentSeconds.value = now.getSeconds();
+    }
+
+    onMounted(() => {
+      timer = setInterval(tick, 1000);
+    });
+
+    onUnmounted(() => {
+      clearInterval(timer);
+    });
+
+    return {
+      sliderStep,
+      sliderDisplay,
+      clocks,
+      hourAngle,
+      minuteAngle,
+      formatDigital,
+      resetToNow,
+      Math,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
